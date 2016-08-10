@@ -13,6 +13,8 @@ export default {
       // preserves its current state and we are modifying
       // its initial state.
       msg: 'Hello World!'
+
+      // 57ee3318536b23ee81d6b27e36997cde
     }
   }
 }
