@@ -14,10 +14,7 @@
 // http://ws.audioscrobbler.com/2.0/?method=user.getweeklytrackchart&user=Reknawn&apiKey=cd0ccd3a54f6da3e6c259d90f5ae702a&format=json
 // import VueResource from 'vue-resource'
 //
-var Vue = require('vue')
-var VueResource = require('vue-resource')
-
-Vue.use(VueResource)
+//
 
 let config = {
   baseUrl: 'http://ws.audioscrobbler.com/2.0/?',
@@ -46,7 +43,6 @@ export default {
   methods: {
 
     getWeekly: function (method, username, apiKey, from, to) {
-      let theResponse = false
       let url = this.config.baseUrl + method +
                 '&user=' + username +
                 '&api_key=' + apiKey +
@@ -54,13 +50,7 @@ export default {
                 '&to=' + to +
                 '&format=json'
 
-      console.log(url)
-      this.$http.get(url, {}).then((response) => {
-        theResponse = response
-      }, (response) => {
-        theResponse = response
-      })
-      return theResponse
+      return this.$http.get(url, {})
     },
 
     getWeeklyArtistChart: function () {
@@ -71,9 +61,12 @@ export default {
       this.msg = 'Loading Artists'
 
       let response = self.getWeekly(config.methods.getWeeklyArtistChart, config.userName, config.apiKey, config.from, config.to)
-      console.log(response)
 
-      setTimeout(function () {
+      /*
+      ** Retrieve promise from getWeekly, then treat the response
+      **
+       */
+      response.then((response) => {
         let data = JSON.parse(response.body).weeklyartistchart
         let dataLength = data.artist.length
         const LIMIT = 10
@@ -90,7 +83,9 @@ export default {
           console.log(myArtist)
           x++
         }
-      }, 500)
+      }, (response) => {
+        console.log(response)
+      })
     }
   },
   ready: function () {
