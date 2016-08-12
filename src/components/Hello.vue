@@ -24,7 +24,11 @@ let config = {
   userName: 'Reknawn',
   apiKey: 'cd0ccd3a54f6da3e6c259d90f5ae702a',
   from: Date.parse('01/05/2015 00:00:00') / 1000,
-  to: Date.parse('02/05/2015 00:00:01') / 1000
+  to: Date.parse('02/05/2015 00:00:01') / 1000,
+  methods: {
+    getWeeklyArtistChart: 'method=user.getweeklyartistchart',
+    getWeeklyAlbumChart: 'method=user.getweeklyalbumchart'
+  }
 }
 export default {
   data () {
@@ -40,20 +44,36 @@ export default {
     }
   },
   methods: {
+
+    getWeekly: function (method, username, apiKey, from, to) {
+      let theResponse = false
+      let url = this.config.baseUrl + method +
+                '&user=' + username +
+                '&api_key=' + apiKey +
+                '&from=' + from +
+                '&to=' + to +
+                '&format=json'
+
+      console.log(url)
+      this.$http.get(url, {}).then((response) => {
+        theResponse = response
+      }, (response) => {
+        theResponse = response
+      })
+      return theResponse
+    },
+
     getWeeklyArtistChart: function () {
       let self = this
       let artists = []
-      let method = 'method=user.getweeklyartistchart'
-      let url = this.config.baseUrl + method +
-                '&user=' + this.config.userName +
-                '&api_key=' + this.config.apiKey +
-                '&from=' + this.config.from +
-                '&to=' + this.config.to +
-                '&format=json'
+      let config = this.config
 
       this.msg = 'Loading Artists'
 
-      this.$http.get(url, {}).then((response) => {
+      let response = self.getWeekly(config.methods.getWeeklyArtistChart, config.userName, config.apiKey, config.from, config.to)
+      console.log(response)
+
+      setTimeout(function () {
         let data = JSON.parse(response.body).weeklyartistchart
         let dataLength = data.artist.length
         const LIMIT = 10
@@ -66,13 +86,11 @@ export default {
             url: artist.url
           }
           artists.push(myArtist)
-          console.log(myArtist)
           self.artists.push(myArtist)
+          console.log(myArtist)
           x++
         }
-      }, (response) => {
-        console.log(response)
-      })
+      }, 500)
     }
   },
   ready: function () {
