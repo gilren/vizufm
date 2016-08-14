@@ -2,9 +2,9 @@
   <div class="hello">
     <h1>{{ msg }}</h1>
 
-    <ul>
+    <ul class="artists">
       <li v-for="item in artists">
-        {{ item.name }}
+        {{ item.playcount }} : {{ item.name }}
       </li>
     </ul>
   </div>
@@ -20,8 +20,6 @@ let config = {
   baseUrl: 'http://ws.audioscrobbler.com/2.0/?',
   userName: 'Reknawn',
   apiKey: 'cd0ccd3a54f6da3e6c259d90f5ae702a',
-  from: Date.parse('01/05/2015 00:00:00') / 1000,
-  to: Date.parse('02/05/2015 00:00:01') / 1000,
   methods: {
     getWeeklyArtistChart: 'method=user.getweeklyartistchart',
     getWeeklyAlbumChart: 'method=user.getweeklyalbumchart'
@@ -42,25 +40,31 @@ export default {
   },
   methods: {
 
+    buildGraph: function () {
+      // var self = this
+    },
+
     getWeekly: function (method, username, apiKey, from, to) {
+      let formattedFrom = Date.parse(from) / 1000
+      let formattedTo = Date.parse(to) / 1000
       let url = this.config.baseUrl + method +
                 '&user=' + username +
                 '&api_key=' + apiKey +
-                '&from=' + from +
-                '&to=' + to +
+                '&from=' + formattedFrom +
+                '&to=' + formattedTo +
                 '&format=json'
 
       return this.$http.get(url, {})
     },
 
-    getWeeklyArtistChart: function () {
+    getWeeklyArtistChart: function (from, to) {
       let self = this
       let artists = []
       let config = this.config
 
       this.msg = 'Loading Artists'
 
-      let response = self.getWeekly(config.methods.getWeeklyArtistChart, config.userName, config.apiKey, config.from, config.to)
+      let response = self.getWeekly(config.methods.getWeeklyArtistChart, config.userName, config.apiKey, from, to)
 
       /*
       ** Retrieve promise from getWeekly, then treat the response
@@ -80,16 +84,16 @@ export default {
           }
           artists.push(myArtist)
           self.artists.push(myArtist)
-          console.log(myArtist)
           x++
         }
       }, (response) => {
-        console.log(response)
+          // do smth if error
       })
     }
   },
   ready: function () {
-    this.getWeeklyArtistChart()
+    // this.getWeeklyArtistChart('01/05/2015 00:00:00', '08/05/2015 00:00:00')
+    this.getWeeklyArtistChart('05/01/2015 00:00:00', '05/08/2015 00:00:00')
   }
 }
 </script>
@@ -98,5 +102,11 @@ export default {
 <style scoped>
 h1 {
   color: #42b983;
+}
+
+.artists {
+  position: fixed;
+  right: 5%;
+  top: 0;
 }
 </style>
