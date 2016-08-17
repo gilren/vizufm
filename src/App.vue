@@ -1,7 +1,7 @@
 <template>
   <div id="app">
 
-    <!--<graph></graph> -->
+    <graph></graph>
     <hello></hello>
   </div>
 </template>

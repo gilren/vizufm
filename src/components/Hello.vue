@@ -13,8 +13,6 @@
 // http://ws.audioscrobbler.com/2.0/?method=user.getweeklytrackchart&user=reknawn&api_key=57ee3318536b23ee81d6b27e36997cde&format=json
 // http://ws.audioscrobbler.com/2.0/?method=user.getweeklytrackchart&user=Reknawn&apiKey=cd0ccd3a54f6da3e6c259d90f5ae702a&format=json
 // import VueResource from 'vue-resource'
-//
-//
 
 let config = {
   baseUrl: 'http://ws.audioscrobbler.com/2.0/?',
@@ -98,31 +96,26 @@ export default {
             }
 
             // if not first week
-            if (index !== 0) {
-              // check for duplicated artist
-              if (artistsNames.indexOf(myArtist.name) > -1) {
-                let foundArtist = totalArtists.findIndex(
-                  function (obj) {
-                    return obj.name === myArtist.name
-                  })
-                console.log(foundArtist)
-                console.log(myArtist.name)
-                console.log(totalArtists[foundArtist].playcount = totalArtists[foundArtist].playcount + myArtist.playcount)
-              }
+            // check for duplicated artist
+            if (index !== 0 && artistsNames.indexOf(myArtist.name) > -1) {
+              let foundArtist = totalArtists.findIndex(
+                function (obj) {
+                  return obj.name === myArtist.name
+                })
+              totalArtists[foundArtist].playcount += myArtist.playcount
             } else {
               artistsNames.push(myArtist.name)
               totalArtists.push(myArtist)
             }
-
-            console.log(x + ': ' + myArtist.playcount + ' | ' + myArtist.name)
-            self.artists.push(myArtist)
             x++
           }
+        })
+        self.artists = totalArtists.sort(function (a, b) {
+          return b.playcount - a.playcount
         })
       }).catch(function (e) {
         console.log(e)
       })
-      console.log(totalArtists)
     },
     getWeeksInMonth: function (month, year) {
       let weeks = []
@@ -147,11 +140,7 @@ export default {
     }
   },
   ready: function () {
-    // this.getWeeklyArtistChart('01/05/2015 00:00:00', '08/05/2015 00:00:00')
-    // console.log('05/01/2015 00:00:00', '05/08/2015 00:00:00')
-    // this.getWeeklyArtistChart('05/01/2015 00:00:00', '05/08/2015 00:00:00')
-
-    this.getMonthlyArtistChart(6, 2016)
+    this.getMonthlyArtistChart(5, 2016)
   }
 }
 </script>
