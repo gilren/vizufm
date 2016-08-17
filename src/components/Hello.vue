@@ -33,7 +33,6 @@ export default {
       artists: []
 
       // 57ee3318536b23ee81d6b27e36997cde
-
       // Your API Key is cd0ccd3a54f6da3e6c259d90f5ae702a
       // Your secret is 66bf5a008964c70f1f438dee3e4b36f0
     }
@@ -59,41 +58,100 @@ export default {
 
     getWeeklyArtistChart: function (from, to) {
       let self = this
-      let artists = []
       let config = this.config
 
       this.msg = 'Loading Artists'
 
-      let response = self.getWeekly(config.methods.getWeeklyArtistChart, config.userName, config.apiKey, from, to)
+      return self.getWeekly(config.methods.getWeeklyArtistChart, config.userName, config.apiKey, from, to)
+    },
+    /*
+    ** int, int
+    **
+     */
+    getMonthlyArtistChart: function (month, year) {
+      let totalArtists = []
+      let self = this
+      let weeks = this.getWeeksInMonth(month, year)
+      let promises = []
+      let artistsNames = []
 
-      /*
-      ** Retrieve promise from getWeekly, then treat the response
-      **
-       */
-      response.then((response) => {
-        let data = JSON.parse(response.body).weeklyartistchart
-        let dataLength = data.artist.length
-        const LIMIT = 10
-        let x = 0
-        while (x <= dataLength && x < LIMIT) {
-          let artist = data.artist[x]
-          let myArtist = {
-            name: artist.name,
-            playcount: artist.playcount,
-            url: artist.url
-          }
-          artists.push(myArtist)
-          self.artists.push(myArtist)
-          x++
-        }
-      }, (response) => {
-          // do smth if error
+      weeks.forEach(function (week) {
+        let from = '' + (month + 1) + '-' + week.start + '-' + year + ' 00:00:00'
+        let to = '' + (month + 1) + '-' + week.end + '-' + year + ' 00:00:00'
+
+        console.log(from + ' ' + to)
+        promises.push(self.getWeeklyArtistChart(from, to))
       })
+
+      Promise.all(promises).then(function (dataArr) {
+        dataArr.forEach(function (response, index) {
+          let data = JSON.parse(response.body).weeklyartistchart
+          let dataLength = data.artist.length
+          const LIMIT = 10
+          let x = 0
+          while (x < dataLength && x < LIMIT) {
+            let artist = data.artist[x]
+            let myArtist = {
+              name: artist.name,
+              playcount: parseInt(artist.playcount),
+              url: artist.url
+            }
+
+            // if not first week
+            if (index !== 0) {
+              // check for duplicated artist
+              if (artistsNames.indexOf(myArtist.name) > -1) {
+                let foundArtist = totalArtists.findIndex(
+                  function (obj) {
+                    return obj.name === myArtist.name
+                  })
+                console.log(foundArtist)
+                console.log(myArtist.name)
+                console.log(totalArtists[foundArtist].playcount = totalArtists[foundArtist].playcount + myArtist.playcount)
+              }
+            } else {
+              artistsNames.push(myArtist.name)
+              totalArtists.push(myArtist)
+            }
+
+            console.log(x + ': ' + myArtist.playcount + ' | ' + myArtist.name)
+            self.artists.push(myArtist)
+            x++
+          }
+        })
+      }).catch(function (e) {
+        console.log(e)
+      })
+      console.log(totalArtists)
+    },
+    getWeeksInMonth: function (month, year) {
+      let weeks = []
+      let firstDate = new Date(year, month, 1)
+      let lastDate = new Date(year, month + 1, 0)
+      let numDays = lastDate.getDate()
+
+      let start = 1
+      let end = 8 - firstDate.getDay()
+      while (start <= numDays) {
+        weeks.push({
+          start: start,
+          end: end
+        })
+        start = end + 1
+        end = end + 7
+        if (end > numDays) {
+          end = numDays
+        }
+      }
+      return weeks
     }
   },
   ready: function () {
     // this.getWeeklyArtistChart('01/05/2015 00:00:00', '08/05/2015 00:00:00')
-    this.getWeeklyArtistChart('05/01/2015 00:00:00', '05/08/2015 00:00:00')
+    // console.log('05/01/2015 00:00:00', '05/08/2015 00:00:00')
+    // this.getWeeklyArtistChart('05/01/2015 00:00:00', '05/08/2015 00:00:00')
+
+    this.getMonthlyArtistChart(6, 2016)
   }
 }
 </script>
