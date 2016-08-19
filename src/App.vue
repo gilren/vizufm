@@ -2,12 +2,17 @@
   <div id="app">
     <h1>{{ msg }}</h1>
     <ul class="artists">
-      <li v-for="item in artists">
-        {{ item.playcount }} : {{ item.name }}
+      <li v-for="item in artists" track-by="$index">
+        {{ item.date }}
+        <ul>
+          <li v-for="artist in item.artists" track-by="$index">
+            {{ artist.playcount }} : {{ artist.name }}
+          </li>
+        </ul>
       </li>
     </ul>
     <header>
-      <graph :highest-artist-playcount="highestArtistPlaycount"></graph>
+      <graph :highest-artist-playcount="highestArtistPlaycount" :artists="artists"></graph>
     </header>
   </div>
 </template>
@@ -35,14 +40,11 @@ export default {
       msg: 'ryty',
       config: config,
       artists: [],
-      highestArtistPlaycount: 0
+      highestArtistPlaycount: 0,
+      monthsByArtist: []
     }
   },
   methods: {
-
-    buildGraph: function () {
-      // var self = this
-    },
 
     getWeekly: function (method, username, apiKey, from, to) {
       let url = this.config.baseUrl + method +
@@ -68,6 +70,7 @@ export default {
       let self = this
       let weeks = this.getWeeksInMonth(month, year)
       let promises = []
+      let date = (month + 1) + '/' + year
 
       weeks.forEach(function (week) {
         let from = '' + (month + 1) + '-' + week.start + '-' + year + ' 00:00:00'
@@ -75,53 +78,94 @@ export default {
         promises.push(self.getWeeklyArtistChart(from, to))
       })
 
-      return self.fetchMonthlyArtistChart(promises)
+      return self.fetchMonthlyArtistChart(promises, date)
     },
-
-    fetchMonthlyArtistChart: function (arrayPromises) {
+    // [1] Temporary way to process, there's probably a better way
+    addArtists: function (artist) {
+      let self = this
+      // We only want 10 artist total
+      if (self.monthsByArtist.length < 10) {
+        self.monthsByArtist.forEach(function (anArtist, index) {
+          console.log('???')
+          // Check if artist is already in the array, if so add its playcount
+          if (anArtist.name === artist.name) {
+            console.log('duplicate : ' + anArtist.name)
+            anArtist.playcount += artist.playcount
+          } else {
+            // Check if this artist playcount is bigger than the last of the stored ones
+            if (index === self.monthsByArtist.length && artist.playcount > anArtist.playcount) {
+              console.log('updated : ' + artist.name)
+              anArtist.name = artist.name
+              anArtist.playcount = artist.playcount
+            }
+          }
+        })
+      } else {
+        console.log('added : ' + artist.name)
+        self.monthsByArtist.push(artist)
+      }
+    },
+    // [2] Temporary way to process, there's probably a better way
+    fetchWeeks: function (dataArr) {
       let self = this
       let totalArtists = []
       let artistsNames = []
 
+      dataArr.forEach(function (weeklyArtistResponse, index) {
+        let data = JSON.parse(weeklyArtistResponse.body).weeklyartistchart
+        let dataLength = data.artist.length
+        let x = 0
+        while (x < dataLength && x < self.config.limitOfArtistsToFetch) {
+          let artist = data.artist[x]
+          let myArtist = {
+            name: artist.name,
+            playcount: parseInt(artist.playcount),
+            url: artist.url
+          }
+          // console.log(myArtist)
+          self.addArtists(myArtist)
+
+          // Search for duplicated artists from the first week's data
+          if (index !== 0 && artistsNames.indexOf(myArtist.name) > -1) {
+            let foundArtist = totalArtists.findIndex(
+              function (obj) {
+                return obj.name === myArtist.name
+              })
+
+            // In case the artist already exist, we update its playcount
+            totalArtists[foundArtist].playcount += myArtist.playcount
+            if (totalArtists[foundArtist].playcount > self.highestArtistPlaycount) {
+              self.highestArtistPlaycount = totalArtists[foundArtist].playcount
+            }
+          } else {
+            // Adding a new artist and refering its name in an array for the duplication test
+            if (myArtist.playcount > self.highestArtistPlaycount) {
+              self.highestArtistPlaycount = myArtist.playcount
+            }
+            artistsNames.push(myArtist.name)
+            totalArtists.push(myArtist)
+          }
+          x++
+        }
+      })
+
+      return {artistsNames, totalArtists}
+    },
+
+    fetchMonthlyArtistChart: function (arrayPromises, date) {
+      let self = this
       // Executes when all promises are done
       Promise.all(arrayPromises).then(function (dataArr) {
-        dataArr.forEach(function (weeklyArtistResponse, index) {
-          let data = JSON.parse(weeklyArtistResponse.body).weeklyartistchart
-          let dataLength = data.artist.length
-          let x = 0
-          while (x < dataLength && x < self.config.limitOfArtistsToFetch) {
-            let artist = data.artist[x]
-            let myArtist = {
-              name: artist.name,
-              playcount: parseInt(artist.playcount),
-              url: artist.url
-            }
-
-            // Search for duplicated artists from the first week's data
-            if (index !== 0 && artistsNames.indexOf(myArtist.name) > -1) {
-              let foundArtist = totalArtists.findIndex(
-                function (obj) {
-                  return obj.name === myArtist.name
-                })
-
-              // In case the artist already exist, we update its playcount
-              totalArtists[foundArtist].playcount += myArtist.playcount
-            } else {
-              // Adding a new artist and refering its name in an array for the duplication test
-              artistsNames.push(myArtist.name)
-              totalArtists.push(myArtist)
-            }
-            x++
-          }
-        })
+        let artistsData = self.fetchWeeks(dataArr)
+        let totalArtists = artistsData.totalArtists
 
         // When all the data has been stored we sort it by the highest play count
         // Then we assign it to the artists array of the app's data
         totalArtists = totalArtists.sort(function (a, b) {
           return b.playcount - a.playcount
         })
-        self.highestArtistPlaycount = totalArtists[0].playcount
-        self.artists = totalArtists
+
+        self.artists.push(totalArtists)
       }).catch(console.log.bind(console))
     },
 
@@ -148,7 +192,8 @@ export default {
     }
   },
   ready: function () {
-    this.getMonthlyArtistChart(5, 2016)
+    this.getMonthlyArtistChart(0, 2016)
+    this.getMonthlyArtistChart(1, 2016)
   }
 }
 </script>
@@ -179,8 +224,9 @@ body {
 }
 
 header {
-  /* background: #31333f; */
+  background: #31333f;
   height: 900px;
+    clear: both;
 }
 
 h1 {
@@ -188,9 +234,11 @@ h1 {
 }
 
 .artists {
-  position: fixed;
-  right: 5%;
-  top: 0;
+  clear: both;
+}
+
+.artists > li {
+  float:left;
 }
 
 </style>
