@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <h1>{{ msg }}</h1>
+    <div>
     <ul class="artists">
       <li v-for="item in artists" track-by="$index">
         {{ item.date }}
@@ -11,12 +12,25 @@
         </ul>
       </li>
     </ul>
+  </div>
+  <div style="clear:both">
+    <ul class="monthsByArtist">
+      <li v-for="item in monthsByArtist" track-by="$index">
+        {{ item.playcount }} : {{ item.name }}
+        <ul>
+          <li v-for="month in item.monthsByArtist" track-by="$index">
+            {{ artist.playcount }} : {{ artist.name }}
+          </li>
+        </ul>
+      </li>
+    </ul>
+    </div>
     <header>
       <graph :highest-artist-playcount="highestArtistPlaycount" :artists="artists"></graph>
     </header>
   </div>
 </template>
-
+110 184
 <script>
 import Graph from './components/Graph'
 
@@ -24,7 +38,7 @@ const config = {
   baseUrl: 'http://ws.audioscrobbler.com/2.0/?',
   userName: 'Reknawn',
   apiKey: 'cd0ccd3a54f6da3e6c259d90f5ae702a',
-  limitOfArtistsToFetch: 10,
+  limitOfArtistsToFetch: 20,
   methods: {
     getWeeklyArtistChart: 'method=user.getweeklyartistchart',
     getWeeklyAlbumChart: 'method=user.getweeklyalbumchart'
@@ -53,7 +67,9 @@ export default {
                 '&from=' + Date.parse(from) / 1000 +
                 '&to=' + Date.parse(to) / 1000 +
                 '&format=json'
-
+      console.log(from)
+      console.log(to)
+      console.log(url)
       return this.$http.get(url, {})
     },
 
@@ -74,39 +90,55 @@ export default {
 
       weeks.forEach(function (week) {
         let from = '' + (month + 1) + '-' + week.start + '-' + year + ' 00:00:00'
-        let to = '' + (month + 1) + '-' + week.end + '-' + year + ' 00:00:00'
+        let to = '' + (month + 1) + '-' + week.end + '-' + year + ' 23:59:59'
         promises.push(self.getWeeklyArtistChart(from, to))
       })
 
       return self.fetchMonthlyArtistChart(promises, date)
     },
     // [1] Temporary way to process, there's probably a better way
-    addArtists: function (artist) {
+    addArtists: function (artist, date) {
       let self = this
       // We only want 10 artist total
-      if (self.monthsByArtist.length < 10) {
-        self.monthsByArtist.forEach(function (anArtist, index) {
-          console.log('???')
+      if (self.monthsByArtist.length === 50) {
+        for (var j = 0; j < self.monthsByArtist.length; j++) {
           // Check if artist is already in the array, if so add its playcount
+          let anArtist = self.monthsByArtist[j]
           if (anArtist.name === artist.name) {
-            console.log('duplicate : ' + anArtist.name)
+            console.log(date)
+            console.log('%c duplicate ' + anArtist.name +
+            ' added ' + artist.playcount +
+            ' to ' + anArtist.playcount +
+            ' = ' + (anArtist.playcount + artist.playcount),
+            'color:green'
+            )
             anArtist.playcount += artist.playcount
+
+            self.monthsByArtist = self.monthsByArtist.sort(function (a, b) {
+              return b.playcount - a.playcount
+            })
+            break
           } else {
             // Check if this artist playcount is bigger than the last of the stored ones
-            if (index === self.monthsByArtist.length && artist.playcount > anArtist.playcount) {
-              console.log('updated : ' + artist.name)
+            if (j === (self.monthsByArtist.length - 1) && artist.playcount > anArtist.playcount) {
+              console.log('%c removed ' + anArtist.name + ' for ' + artist.name + ' | ' + anArtist.playcount + ' for ' + artist.playcount, 'color:red')
               anArtist.name = artist.name
               anArtist.playcount = artist.playcount
+              self.monthsByArtist = self.monthsByArtist.sort(function (a, b) {
+                return b.playcount - a.playcount
+              })
+              break
             }
           }
-        })
+          console.log('%c ' + j + ' | ' + anArtist.playcount + ' | ' + anArtist.name, 'background:#000; color:white')
+        }
       } else {
         console.log('added : ' + artist.name)
         self.monthsByArtist.push(artist)
       }
     },
     // [2] Temporary way to process, there's probably a better way
-    fetchWeeks: function (dataArr) {
+    fetchWeeks: function (dataArr, date) {
       let self = this
       let totalArtists = []
       let artistsNames = []
@@ -123,7 +155,7 @@ export default {
             url: artist.url
           }
           // console.log(myArtist)
-          self.addArtists(myArtist)
+          // self.addArtists(myArtist, date)
 
           // Search for duplicated artists from the first week's data
           if (index !== 0 && artistsNames.indexOf(myArtist.name) > -1) {
@@ -154,18 +186,24 @@ export default {
 
     fetchMonthlyArtistChart: function (arrayPromises, date) {
       let self = this
+
       // Executes when all promises are done
       Promise.all(arrayPromises).then(function (dataArr) {
-        let artistsData = self.fetchWeeks(dataArr)
+        let artistsData = self.fetchWeeks(dataArr, date)
         let totalArtists = artistsData.totalArtists
 
         // When all the data has been stored we sort it by the highest play count
-        // Then we assign it to the artists array of the app's data
         totalArtists = totalArtists.sort(function (a, b) {
           return b.playcount - a.playcount
         })
 
-        self.artists.push(totalArtists)
+        // Then we assign it to the artists array of the app's data
+        //
+        let myMonth = {
+          date: date,
+          artists: totalArtists
+        }
+        self.artists.push(myMonth)
       }).catch(console.log.bind(console))
     },
 
@@ -193,7 +231,8 @@ export default {
   },
   ready: function () {
     this.getMonthlyArtistChart(0, 2016)
-    this.getMonthlyArtistChart(1, 2016)
+    // this.getMonthlyArtistChart(1, 2016)
+    // this.getMonthlyArtistChart(2, 2016)
   }
 }
 </script>
