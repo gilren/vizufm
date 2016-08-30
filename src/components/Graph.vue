@@ -35,9 +35,9 @@
       </v-line>
       </g>
 
-      <!-- <g class="data path one" data-setname="path one" opacity="0.4">
+      <!--<g class="data path one" data-setname="path one" opacity="0.4">
        <path class="path one" class="path" fill="#2FBFC9" d="M50,850 L50,192 L210,500 L405,179 L551,200 L1050,204 L1050,850 Z"/>
-      </g> -->
+     </g>-->
 
       <g class="data path two" data-setname="path two" opacity="0.4">
          <artist-graph></artist-graph>
@@ -46,6 +46,17 @@
       <!--<g class="data path two" data-setname="¨path two" opacity="0.4">
         <path class="path one" class="path" fill="#2BBAB1" d="M50,850 L50,192 L210,400 L405,179 L551,200 L1050,204 L1050,850 Z"/>
       </g>-->
+
+      <g class="data path two" data-setname="¨path two" opacity="0.4">
+        <path class="path one" class="path" fill="#2BBAB1" d="
+          M0,900 L0,900
+          L80,300 L240,400
+          L400,179 L551,100
+          L720,204 L880,800
+          L1040,204 L1200,500
+          L1520,600 L1680,800
+          L1980,204 L1980,900 Z"/>
+      </g>
     </svg>
   </div>
 </template>

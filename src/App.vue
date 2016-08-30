@@ -100,41 +100,52 @@ export default {
         data: artist.totalPlaycounts
       }
       let foundArtist = false
+
       // Action for not first month && not first week
       if (month !== 0 || currentWeek !== 0) {
-        console.log('Already present : ' + artist.name)
-
-        for (var i = 0; i < self.allArtists.length; i++) {
+        var i = 0
+        while (i < self.allArtists.length && !foundArtist) {
           let currentArtist = self.allArtists[i]
 
-          // Check if artist is already in the array
+          // Check if the artist to add is already in the array
           if (currentArtist.name === artist.name) {
-            currentArtist.totalPlaycounts += artist.totalPlaycounts
-            // Check if there's already data for the current month
-            for (var j = 0; j < currentArtist.playcounts.length; j++) {
-              if (currentArtist.playcounts[j].date === playcounts.date) {
-                console.log('Already data for month')
-            //     currentArtist.playcounts[j].data += playcounts.data
-            //     console.log('%c Updated : ' + artist.name + '\'s playcount', 'color: red;')
-            //     break
-              } else {
-            //     currentArtist.playcounts.push(playcounts)
-            //     console.log('Added : ' + artist.name + '\'s playcount')
-              }
-            }
             foundArtist = true
-            break
+            let addedPlays = false
+
+            currentArtist.totalPlaycounts += artist.totalPlaycounts
+
+            // Check if there's already data for the current month
+            var j = 0
+            while (j < currentArtist.playcounts.length && !addedPlays) {
+              if (currentArtist.playcounts[j].date === playcounts.date) {
+                addedPlays = true
+                currentArtist.playcounts[j].data += playcounts.data
+              } else {
+                if (j === currentArtist.playcounts.length - 1) {
+                  currentArtist.playcounts.push(playcounts)
+                  addedPlays = true
+                }
+              }
+              j++
+            }
           }
+          i++
         }
         if (!foundArtist) {
+          for (var k = 0; k < month; k++) {
+            let oldPlaycounts = {
+              date: k + 1 + '' + date.substring(1, date.length),
+              data: 0
+            }
+            artist.playcounts.push(oldPlaycounts)
+          }
+
           artist.playcounts.push(playcounts)
           self.allArtists.push(artist)
-          console.log('Added : ' + artist.name)
         }
       } else {
         artist.playcounts.push(playcounts)
         self.allArtists.push(artist)
-        console.log('Added : ' + artist.name)
       }
     },
     fetchWeeks: function (dataArr, date, month) {
@@ -158,7 +169,6 @@ export default {
         }
       })
     },
-
     fetchMonthlyArtistChart: function (arrayPromises, date, month) {
       let self = this
 
@@ -168,10 +178,18 @@ export default {
         self.allArtists = self.allArtists.sort(function (a, b) {
           return b.totalPlaycounts - a.totalPlaycounts
         })
+        // Everything is done we store 20 elements
         self.artists = self.allArtists.slice(0, 20)
+        // Check highestArtistPlaycount
+        self.artists.forEach(function (artist, index) {
+          artist.playcounts.forEach(function (month, index) {
+            if (self.highestArtistPlaycount < month.data) {
+              self.highestArtistPlaycount = month.data
+            }
+          })
+        })
       }).catch(console.log.bind(console))
     },
-
     getWeeksInMonth: function (month, year) {
       let weeks = []
       let firstDate = new Date(year, month, 1)
@@ -203,7 +221,7 @@ export default {
     this.getMonthlyArtistChart(5, 2016)
     this.getMonthlyArtistChart(6, 2016)
     this.getMonthlyArtistChart(7, 2016)
-    this.getMonthlyArtistChart(8, 2016)
+    // this.getMonthlyArtistChart(8, 2016)
   }
 }
 </script>
