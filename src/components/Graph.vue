@@ -141,13 +141,20 @@ export default {
       return labels
     },
     createGraphs: function (allArtists) {
-      // console.log(allArtists)
+      console.log(allArtists)
       allArtists.forEach(function (artist) {
       })
 
       let graphs = {}
       return graphs
       // d="M0,900 L0,300 L250,500 L405,179 L551,200 L1050,204 L1050,900 Z"
+      //          M0,900 L0,900
+      //          L80,300 L240,400
+      //          L400,179 L551,100
+      //          L720,204 L880,800
+      //          L1040,204 L1200,500
+      //          L1520,600 L1680,800
+      //          L1980,204 L1980,900 Z"/>
 
       // let start = "M0,900"
       // let end = "L1050,900 Z"
