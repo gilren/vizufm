@@ -157,10 +157,6 @@ export default {
       // Executes when all promises are done
       return Promise.all(arrayPromises).then(function (dataArr) {
         self.fetchWeeks(dataArr, date, month, year)
-        self.allArtists = self.allArtists.sort(function (a, b) {
-          return b.totalPlaycounts - a.totalPlaycounts
-        })
-
         self.msg = 'We gucci for : ' + month
       }).catch(console.log.bind(console))
     },
@@ -183,6 +179,12 @@ export default {
       promisesArray.push(self.getMonthlyArtistChart(8, 2016))
 
       Promise.all(promisesArray).then(function () {
+        self.allArtists = self.allArtists.sort(function (a, b) {
+          return b.totalPlaycounts - a.totalPlaycounts
+        })
+
+        self.allArtists.length
+
         // Everything is done we store 20 elements
         self.artists = self.allArtists.slice(0, self.config.limitOfArtistsToFetch)
 

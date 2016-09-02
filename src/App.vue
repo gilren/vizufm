@@ -2,7 +2,7 @@
   <div id="app">
     <h1>{{ msg }}</h1>
     <lastfm></lastfm>
-    <header v-show="notempty">
+    <header v-if="!empty">
       <graph :highest-artist-playcount="highestArtistPlaycount" :artists="artists"></graph>
     </header>
   </div>
@@ -20,7 +20,8 @@ export default {
     return {
       msg: 'ryty',
       artists: [],
-      highestArtistPlaycount: 0
+      highestArtistPlaycount: 0,
+      empty: true
     }
   },
   methods: {
@@ -28,6 +29,7 @@ export default {
   events: {
     'artists': function (myArtists) {
       this.artists = myArtists
+      this.empty = false
     },
     'highestArtistPlaycount': function (highestArtistPlaycount) {
       this.highestArtistPlaycount = highestArtistPlaycount
@@ -66,7 +68,7 @@ body {
 
 header {
   background: #31333f;
-  height: 900px;
-    clear: both;
+  height: 1000px;
+  clear: both;
 }
 </style>
