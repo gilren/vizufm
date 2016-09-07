@@ -24,13 +24,12 @@ const config = {
 export default {
   data () {
     return {
-      msg: 'ryty',
+      msg: '',
       config: config,
       allArtists: [],
       artists: [],
       highestArtistPlaycount: 0,
-      monthsByArtist: [],
-      done: false
+      monthsByArtist: []
     }
   },
   methods: {
@@ -87,21 +86,22 @@ export default {
     getYearlyArtistChart: function (year, monthStart = 0, monthEnd = 12) {
       let self = this
 
-      for (var i = monthStart; i < monthEnd; i++) {
+      for (let i = monthStart; i < monthEnd; i++) {
         self.getMonthlyArtistChart(i, year)
       }
     },
     addArtist: function (artist, date, currentWeek, month, year) {
       let self = this
+      let foundArtist = false
       let playcounts = {
         date: date,
         data: artist.totalPlaycounts
       }
-      let foundArtist = false
+      let monthsFiller = []
 
-      // Action for not first month && not first week
-      var i = 0
-      while (i < self.allArtists.length && !foundArtist) {
+      let i = 0
+      let allArtistsLength = self.allArtists.length
+      while (i < allArtistsLength && !foundArtist) {
         let currentArtist = self.allArtists[i]
 
         // Check if the artist to add is already in the array
@@ -112,9 +112,9 @@ export default {
         }
         i++
       }
+      // Artist was not found so we add it
       if (!foundArtist) {
-        let monthsFiller = []
-        for (var y = 0; y < 12; y++) {
+        for (let y = 0; y < 12; y++) {
           monthsFiller.push({
             date: (y + 1) + '/' + year,
             data: 0
@@ -134,8 +134,8 @@ export default {
           response = self.$http.get(response.url, {})
         }
         let data = JSON.parse(response.body).weeklyartistchart.artist
-        let dataLength = data.length
         let x = 0
+        let dataLength = data.length
 
         while (x < dataLength) {
           let artist = data[x]
@@ -153,11 +153,12 @@ export default {
     },
     fetchMonthlyArtistChart: function (arrayPromises, date, month, year) {
       let self = this
+      self.msg = 'We gucci for : '
 
       // Executes when all promises are done
       return Promise.all(arrayPromises).then(function (dataArr) {
         self.fetchWeeks(dataArr, date, month, year)
-        self.msg = 'We gucci for : ' + month
+        self.msg += month + ', '
       }).catch(console.log.bind(console))
     },
     notify: function () {
@@ -168,6 +169,7 @@ export default {
     getData: function () {
       let self = this
       let promisesArray = []
+
       promisesArray.push(self.getMonthlyArtistChart(0, 2016))
       promisesArray.push(self.getMonthlyArtistChart(1, 2016))
       promisesArray.push(self.getMonthlyArtistChart(2, 2016))
@@ -182,8 +184,6 @@ export default {
         self.allArtists = self.allArtists.sort(function (a, b) {
           return b.totalPlaycounts - a.totalPlaycounts
         })
-
-        self.allArtists.length
 
         // Everything is done we store 20 elements
         self.artists = self.allArtists.slice(0, self.config.limitOfArtistsToFetch)

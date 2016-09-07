@@ -6,9 +6,15 @@
        <path class="path one" class="path" fill="#2FBFC9" d="M50,850 L50,192 L210,500 L405,179 L551,200 L1050,204 L1050,850 Z"/>
      </g>-->
 
-      <!--<g class="data path two" data-setname="path two" opacity="0.4">
-         <artist-graph></artist-graph>
-      </g>-->
+      <g class="data path two" data-setname="path two" opacity="0.4">
+        <artist-graph
+        v-for="graph in graphs"
+        :graph="graph.d"
+        :color="graph.color"
+        :index='$index'
+        :total="graphs.length">
+        </artist-graph>
+      </g>
 
       <!--<g class="data path two" data-setname="¨path two" opacity="0.4">
         <path class="path one" class="path" fill="#2BBAB1" d="M50,850 L50,192 L210,400 L405,179 L551,200 L1050,204 L1050,850 Z"/>
@@ -30,6 +36,7 @@
         <path class="path three" class="path" fill="#2FBFC9" d="
           M0,1000 L0,1000
           L160,601.6581632653063 L320,704.9744897959185
+
           L479,576.4030612244899 L640,715.3061224489797
           L800,848.4693877551021 L960,965.5612244897959
 
@@ -106,11 +113,12 @@ export default {
     },
     'artist-graph': {
       props: {
-        stat: Object,
+        graph: String,
         index: Number,
-        total: Number
+        total: Number,
+        color: String
       },
-      template: '<path width="100%" height="100%" class="path two" class="path" fill="#2FBFC9" d="M0,900 L0,300 L250,500 L405,179 L551,200 L1050,204 L1050,900 Z"/>',
+      template: '<path width="100%" height="100%" class="path two" class="path" :fill="color" :d="graph"/>',
       replace: true
     }
   },
@@ -119,7 +127,8 @@ export default {
       axisXLabels: axisXLabels,
       axisYMaxNumber: this.highestArtistPlaycount,
       allArtists: this.artists,
-      labels: {}
+      labels: {},
+      graphs: []
     }
   },
   methods: {
@@ -161,18 +170,47 @@ export default {
     },
     createGraphs: function (allArtists, highestPlaycount) {
       let valueForOne = 900 / highestPlaycount
-      let graphs = {}
-      let xAxes = ['L80', 'L240', 'L400', 'L551', 'L720', 'L880', 'L1040', 'L1480', 'L1620', 'L1720', 'L1920']
+      let graphs = []
+      let xAxes = ['L160', 'L320', 'L479', 'L640', 'L800', 'L960', 'L1120', 'L1280', 'L1520', 'L1680', 'L1920']
 
-      allArtists.forEach(function (artist) {
+      let colors = [
+        '#2FBFC9',
+        '#2CBEC4',
+        '#2ABDBF',
+        '#27BCBA',
+        '#25BBB5',
+        '#22BAB0',
+        '#20B9AB',
+        '#1DB9A6',
+        '#1BB8A1',
+        '#18B79C',
+        '#16B698',
+        '#13B593',
+        '#11B48E',
+        '#0EB489',
+        '#0CB384',
+        '#09B27F',
+        '#07B17A',
+        '#04B075',
+        '#02AF70',
+        '#00AF6C'
+      ]
+
+      allArtists.forEach(function (artist, index) {
+        let color = colors[index]
         let out = 'M0, 1000 L0,1000 '
         artist.playcounts.forEach(function (month, index) {
           let data = month.data
           out += xAxes[index] + ', ' + (1000 - (data * valueForOne)) + ' '
         })
         out += 'L1920, 1000 Z'// december
-        console.log(out)
+        let myGraph = {
+          d: out,
+          color: color
+        }
+        graphs.push(myGraph)
       })
+
       // 784 -> 900
       // 392 -> 450
       // 196 -> 225

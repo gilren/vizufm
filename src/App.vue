@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <h1>{{ msg }}</h1>
     <lastfm></lastfm>
     <header v-if="!empty">
       <graph :highest-artist-playcount="highestArtistPlaycount" :artists="artists"></graph>
@@ -18,7 +17,6 @@ export default {
   },
   data () {
     return {
-      msg: 'ryty',
       artists: [],
       highestArtistPlaycount: 0,
       empty: true
